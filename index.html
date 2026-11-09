@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Happy Diwali Cutie ❤️ Kuchupuchu</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <!-- Three.js & GSAP CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #12041c;
+      font-family: 'Fredoka', sans-serif;
+    }
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      outline: none;
+    }
+
+    /* HUD Overlay */
+    #ui-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 28px 20px 42px;
+    }
+
+    /* Floating Firework Names in Sky */
+    #sky-title {
+      margin-top: 12vh;
+      font-size: clamp(2rem, 5vw, 3.6rem);
+      color: #fff8e7;
+      text-align: center;
+      text-shadow:
+        0 0 12px #ffae00,
+        0 0 28px #ff5e00,
+        0 0 55px #ff0055;
+      opacity: 0;
+      transform: scale(0.75);
+      transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      letter-spacing: 1px;
+    }
+    #sky-title.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Step Subtitle Toast */
+    #hint-banner {
+      background: rgba(25, 8, 38, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(255, 200, 100, 0.45);
+      color: #ffe8b6;
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-size: clamp(0.92rem, 2.2vw, 1.1rem);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.4s ease;
+      text-align: center;
+    }
+    #hint-banner.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Bottom Interactive Yellow Pill Button (Matches Video) */
+    #action-btn {
+      pointer-events: auto;
+      background: linear-gradient(135deg, #ffe268 0%, #ffb327 100%);
+      color: #4a2100;
+      border: 2px solid #fff3b0;
+      padding: 14px 34px;
+      font-family: 'Fredoka', sans-serif;
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      font-weight: 700;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow:
+        0 0 22px rgba(255, 190, 40, 0.8),
+        0 8px 20px rgba(0, 0, 0, 0.4);
+      transform: translateY(20px) scale(0.9);
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease, box-shadow 0.25s ease;
+    }
+    #action-btn.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      animation: pulseGlow 1.8s infinite ease-in-out;
+    }
+    #action-btn:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 0 35px rgba(255, 210, 70, 1), 0 10px 24px rgba(0,0,0,0.5);
+    }
+    #action-btn:active {
+      transform: scale(0.96);
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 18px rgba(255, 190, 40, 0.75), 0 6px 18px rgba(0,0,0,0.4); }
+      50% { box-shadow: 0 0 34px rgba(255, 220, 90, 1), 0 8px 24px rgba(0,0,0,0.5); }
+    }
+
+    /* Final Romantic Note Modal */
+    #final-card {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.85);
+      background: rgba(255, 248, 238, 0.94);
+      border: 3px solid #ffae34;
+      border-radius: 26px;
+      padding: 28px 32px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      color: #4a1525;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65), 0 0 40px rgba(255, 170, 40, 0.5);
+      z-index: 25;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #final-card.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+      pointer-events: auto;
+    }
+    #final-card h2 {
+      font-family: 'Dancing Script', cursive;
+      font-size: 2.4rem;
+      color: #c92a42;
+      margin-bottom: 10px;
+    }
+    #final-card p {
+      font-size: 1.05rem;
+      line-height: 1.55;
+      color: #5c2233;
+      margin-bottom: 18px;
+    }
+    #replay-btn {
+      background: linear-gradient(135deg, #ff5e7e, #d92648);
+      color: #fff;
+      border: none;
+      padding: 11px 26px;
+      border-radius: 999px;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(217, 38, 72, 0.45);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D WebGL Canvas -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- UI Overlay -->
+  <div id="ui-layer">
+    <div id="hint-banner">✨ Tap below to start our Diwali surprise ✨</div>
+    <div id="sky-title">Cutie ❤️ Kuchupuchu</div>
+    <button id="action-btn" class="active">Start Diwali Surprise 🎇</button>
+  </div>
+
+  <!-- Optional Final Love Note -->
+  <div id="final-card">
+    <h2>Happy Diwali, My Love! 🪔❤️</h2>
+    <p>
+      Har diya teri muskurahat ke naam, har roshni hamare saath ke naam.<br><br>
+      From lighting diyas to ringing the mandir bell and burning phuljhadis—every Diwali is magical because of you, my <strong>Kuchupuchu</strong>! ✨
+    </p>
+    <button id="replay-btn" onclick="location.reload()">Replay Our Diwali 🎆</button>
+  </div>
+
+  <script>
+    /**************************************************************
+     * CUSTOMIZE YOUR NAMES & MESSAGES HERE
+     **************************************************************/
+    const CONFIG = {
+      coupleTitle: "Cutie ❤️ Kuchupuchu",
+      bannerMainText: "Happy Diwali",
+      bannerSubText: "Cutie ❤️ Kuchupuchu",
+      sweetCardTop: "100% Pure Love",
+      sweetCardBottom: "Sweetest Thing Here"
+    };
+
+    document.getElementById('sky-title').innerText = CONFIG.coupleTitle;
+
+    /**************************************************************
+     * WEB AUDIO SYNTHESIZER (Bell, Sparkles, Fireworks, Music Chime)
+     **************************************************************/
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playBellSound() {
+      initAudio();
+      const now = audioCtx.currentTime;
+      const freqs = [523.25, 1046.5, 1567.98, 2093];
+      freqs.forEach((f, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = idx === 0 ? 'sine' : 'triangle';
+        osc.frequency.setValueAtTime(f, now);
+        gain.gain.setValueAtTime(0.22 / (idx + 1), now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.8);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 2.8);
+      });
+    }
+
+    function playFireworkPop() {
+      initAudio();
+      const now = audioCtx.currentTime;
+      const bufferSize = audioCtx.sampleRate * 0.35;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.08));
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 950;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      noise.start(now);
+    }
+
+    function playChime(noteFreq = 659.25) {
+      initAudio();
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(noteFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(noteFreq * 1.5, now + 0.45);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.6);
+    }
+
+    /**************************************************************
+     * THREE.JS SCENE, CAMERA & RENDERER SETUP
+     **************************************************************/
+    const canvas = document.getElementById('webgl-canvas');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x28062e);
+    scene.fog = new THREE.FogExp2(0x28062e, 0.009);
+
+    const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 300);
+    // Start looking up at the night sky for Scene 1 Fireworks
+    camera.position.set(0, 14, 28);
+    const cameraTarget = new THREE.Vector3(0, 25, -15);
+    camera.lookAt(cameraTarget);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // Warm festive lighting
+    const ambientLight = new THREE.AmbientLight(0xffd2b3, 0.65);
+    scene.add(ambientLight);
+
+    const moonLight = new THREE.DirectionalLight(0xffdfba, 0.75);
+    moonLight.position.set(18, 35, 22);
+    moonLight.castShadow = true;
+    moonLight.shadow.mapSize.width = 1024;
+    moonLight.shadow.mapSize.height = 1024;
+    scene.add(moonLight);
+
+    const streetWarmGlow = new THREE.PointLight(0xff9436, 1.3, 45);
+    streetWarmGlow.position.set(0, 8, 2);
+    scene.add(streetWarmGlow);
+
+    /**************************************************************
+     * HELPER: CANVAS TEXTURE GENERATOR (Banners, Sweet Card, Signs)
+     **************************************************************/
+    function makeTextBannerTexture(bgColor, borderColor, title, subtitle, width = 512, height = 160) {
+      const c = document.createElement('canvas');
+      c.width = width;
+      c.height = height;
+      const ctx = c.getContext('2d');
+
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 10;
+      ctx.strokeRect(8, 8, width - 16, height - 16);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 46px Fredoka, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(title, width / 2, subtitle ? 72 : 95);
+
+      if (subtitle) {
+        ctx.fillStyle = '#ffe596';
+        ctx.font = 'bold 30px Fredoka, sans-serif';
+        ctx.fillText(subtitle, width / 2, 122);
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    /**************************************************************
+     * 1. STARRY NIGHT SKY & DISTANT CITY SILHOUETTE
+     **************************************************************/
+    const starsGeo = new THREE.BufferGeometry();
+    const starCount = 650;
+    const starPositions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      starPositions[i * 3] = (Math.random() - 0.5) * 180;
+      starPositions[i * 3 + 1] = 10 + Math.random() * 65;
+      starPositions[i * 3 + 2] = -60 + (Math.random() - 0.5) * 70;
+    }
+    starsGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starsMat = new THREE.PointsMaterial({ color: 0xfff4d2, size: 0.45, transparent: true, opacity: 0.9 });
+    const starField = new THREE.Points(starsGeo, starsMat);
+    scene.add(starField);
+
+    // Distant City Skyline (Seen in Scene 1)
+    const skylineGroup = new THREE.Group();
+    for (let i = -14; i <= 14; i++) {
+      const bh = 4 + Math.random() * 10;
+      const bw = 2.2 + Math.random() * 1.5;
+      const bGeo = new THREE.BoxGeometry(bw, bh, 2.5);
+      const bMat = new THREE.MeshBasicMaterial({ color: 0x13041a });
+      const bMesh = new THREE.Mesh(bGeo, bMat);
+      bMesh.position.set(i * 3.1, bh / 2 + 6, -45);
+      skylineGroup.add(bMesh);
+    }
+    scene.add(skylineGroup);
+
+    /**************************************************************
+     * 2. COLORFUL INDIAN STREET, COBBLESTONE ROAD & HOUSES
+     **************************************************************/
+    const worldGroup = new THREE.Group();
+    scene.add(worldGroup);
+
+    // Cobblestone Ground
+    const groundGeo = new THREE.PlaneGeometry(42, 65);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x8c5358, roughness: 0.85 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    worldGroup.add(ground);
+
+    // Helper to build stylized colorful Indian haveli buildings
+    function createBuilding(x, z, w, h, d, wallHex, trimHex, rotY = 0) {
+      const bGroup = new THREE.Group();
+      bGroup.position.set(x, 0, z);
+      bGroup.rotation.y = rotY;
+
+      // Main Body
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshStandardMaterial({ color: wallHex, roughness: 0.65 })
+      );
+      body.position.y = h / 2;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      bGroup.add(body);
+
+      // Roof Trim
+      const roofRim = new THREE.Mesh(
+        new THREE.BoxGeometry(w + 0.4, 0.5, d + 0.4),
+        new THREE.MeshStandardMaterial({ color: trimHex })
+      );
+      roofRim.position.y = h + 0.25;
+      bGroup.add(roofRim);
+
+      // Glowing Jharokha Windows
+      const winMat = new THREE.MeshBasicMaterial({ color: 0xffe28a });
+      for (let wy = 2.4; wy < h - 1.2; wy += 3.0) {
+        for (let wx = -w / 3; wx <= w / 3; wx += (w / 1.5 || 2)) {
+          const win = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.45, 0.15), winMat);
+          win.position.set(wx, wy, d / 2 + 0.05);
+          bGroup.add(win);
+        }
+      }
+      worldGroup.add(bGroup);
+      return bGroup;
+    }
+
+    // Left Row Buildings
+    createBuilding(-9.5, 10, 6, 9.5, 6, 0xd9385a, 0xffae34, Math.PI / 2);  // Pink/Magenta House with carved door
+    createBuilding(-9.5, 2.5, 6, 11, 6, 0x3b78d8, 0xffd15c, Math.PI / 2);  // Royal Blue House
+    createBuilding(-9.5, -5.5, 6.5, 9, 6, 0xf27d32, 0xffe484, Math.PI / 2); // Marigold Orange House
+
+    // Right Row Buildings
+    createBuilding(9.5, 10, 6, 10, 6, 0x8b46c7, 0xffc64b, -Math.PI / 2);   // Purple House
+    const mithaiShop = createBuilding(9.5, 2.0, 7, 8.5, 6, 0xff9f40, 0xc92a42, -Math.PI / 2); // MithaiGhar Shop
+    createBuilding(9.5, -6, 6, 10.5, 6, 0x2ca68c, 0xffdf71, -Math.PI / 2); // Teal House
+
+    // MithaiGhar Signboard on Right Building
+    const mithaiTex = makeTextBannerTexture('#3b1219', '#ffbe3d', 'MithaiGhar', 'Pure Festive Sweets', 384, 110);
+    const mithaiSign = new THREE.Mesh(
+      new THREE.BoxGeometry(3.8, 1.1, 0.2),
+      new THREE.MeshBasicMaterial({ map: mithaiTex })
+    );
+    mithaiSign.position.set(6.4, 5.2, 2.0);
+    mithaiSign.rotation.y = -Math.PI / 2;
+    worldGroup.add(mithaiSign);
+
+    // Overhead "Happy Diwali" Street Welcome Gate
+    const archGroup = new THREE.Group();
+    archGroup.position.set(0, 0, 13.5);
+    const pillarGeo = new THREE.CylinderGeometry(0.32, 0.38, 7.2, 16);
+    const pillarMat = new THREE.MeshStandardMaterial({ color: 0xc9304c });
+    const leftPillar = new THREE.Mesh(pillarGeo, pillarMat);
+    leftPillar.position.set(-5.8, 3.6, 0);
+    const rightPillar = new THREE.Mesh(pillarGeo, pillarMat);
+    rightPillar.position.set(5.8, 3.6, 0);
+    archGroup.add(leftPillar, rightPillar);
+
+    const bannerTex = makeTextBannerTexture('#b81d38', '#ffcf48', CONFIG.bannerMainText, CONFIG.bannerSubText, 640, 180);
+    const bannerBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(12.2, 2.3, 0.35),
+      new THREE.MeshBasicMaterial({ map: bannerTex })
+    );
+    bannerBoard.position.set(0, 6.4, 0);
+    archGroup.add(bannerBoard);
+    worldGroup.add(archGroup);
+
+    /**************************************************************
+     * 3. CARVED DOOR & INTERACTIVE DIYAS (SCENE 3)
+     **************************************************************/
+    const doorStepGroup = new THREE.Group();
+    doorStepGroup.position.set(-6.3, 0, 10);
+    doorStepGroup.rotation.y = Math.PI / 2;
+    worldGroup.add(doorStepGroup);
+
+    // Traditional Wooden Door
+    const woodenDoor = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6, 3.8, 0.25),
+      new THREE.MeshStandardMaterial({ color: 0x4f1f0e, roughness: 0.7 })
+    );
+    woodenDoor.position.set(0, 2.1, 0);
+    doorStepGroup.add(woodenDoor);
+
+    // Step Ledge for Diyas
+    const stepLedge = new THREE.Mesh(
+      new THREE.BoxGeometry(4.2, 0.4, 1.3),
+      new THREE.MeshStandardMaterial({ color: 0xe68a9e })
+    );
+    stepLedge.position.set(0, 0.2, 0.6);
+    doorStepGroup.add(stepLedge);
+
+    // 3 Clay Diyas + Hidden Flames (Turned on in Step 3)
+    const doorstepDiyas = [];
+    [-1.2, 0, 1.2].forEach((dx) => {
+      const dGroup = new THREE.Group();
+      dGroup.position.set(dx, 0.45, 0.75);
+
+      const bowl = new THREE.Mesh(
+        new THREE.ConeGeometry(0.26, 0.18, 16),
+        new THREE.MeshStandardMaterial({ color: 0xb54426 })
+      );
+      bowl.rotation.x = Math.PI;
+      dGroup.add(bowl);
+
+      const flame = new THREE.Mesh(
+        new THREE.SphereGeometry(0.11, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0xffea75 })
+      );
+      flame.scale.set(0.7, 1.6, 0.7);
+      flame.position.y = 0.16;
+      flame.visible = false;
+      dGroup.add(flame);
+
+      const dLight = new THREE.PointLight(0xffa024, 0, 4.5);
+      dLight.position.y = 0.3;
+      dGroup.add(dLight);
+
+      doorStepGroup.add(dGroup);
+      doorstepDiyas.push({ flame, dLight });
+    });
+
+    /**************************************************************
+     * 4. OVERHEAD FAIRY LIGHTS & HANGING KANDIL LANTERNS (SCENE 4)
+     **************************************************************/
+    const streetBulbs = [];
+    const streetLanterns = [];
+    for (let zPos = 11; zPos >= -7; zPos -= 3.5) {
+      // String across street
+      for (let i = 0; i <= 10; i++) {
+        const t = i / 10;
+        const xPos = -6.2 + t * 12.4;
+        const sag = Math.sin(t * Math.PI) * 0.9;
+        const yPos = 6.8 - sag;
+
+        const bulb = new THREE.Mesh(
+          new THREE.SphereGeometry(0.11, 8, 8),
+          new THREE.MeshBasicMaterial({ color: 0x3a2030 }) // starts dim
+        );
+        bulb.position.set(xPos, yPos, zPos);
+        worldGroup.add(bulb);
+        streetBulbs.push(bulb);
+      }
+
+      // Hanging Festive Kandil in Center
+      const kandil = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.48, 0),
+        new THREE.MeshStandardMaterial({
+          color: 0xff5500,
+          emissive: 0x220500,
+          roughness: 0.4
+        })
+      );
+      kandil.scale.y = 1.4;
+      kandil.position.set(0, 5.4, zPos);
+      worldGroup.add(kandil);
+      streetLanterns.push(kandil);
+    }
+
+    /**************************************************************
+     * 5. THE GOLDEN MANDIR & RINGING BELL (SCENE 5)
+     **************************************************************/
+    const mandirGroup = new THREE.Group();
+    mandirGroup.position.set(-2.2, 0, -11.5);
+    worldGroup.add(mandirGroup);
+
+    // Temple Base & Sanctum
+    const templeBase = new THREE.Mesh(
+      new THREE.BoxGeometry(5.6, 4.6, 4.6),
+      new THREE.MeshStandardMaterial({ color: 0xffb340, roughness: 0.55 })
+    );
+    templeBase.position.y = 2.3;
+    mandirGroup.add(templeBase);
+
+    // Glowing Inner Sanctum Doorway
+    const innerGlow = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.1, 3.1),
+      new THREE.MeshBasicMaterial({ color: 0xfff5cc })
+    );
+    innerGlow.position.set(0, 2.0, 2.32);
+    mandirGroup.add(innerGlow);
+
+    // Shikhara (Temple Dome Spire)
+    const spire = new THREE.Mesh(
+      new THREE.ConeGeometry(3.4, 4.8, 4),
+      new THREE.MeshStandardMaterial({ color: 0xf27922, roughness: 0.5 })
+    );
+    spire.position.y = 7.0;
+    spire.rotation.y = Math.PI / 4;
+    mandirGroup.add(spire);
+
+    // Marigold Toran Garland across Temple Arch
+    for (let mx = -2.2; mx <= 2.2; mx += 0.35) {
+      const marigold = new THREE.Mesh(
+        new THREE.SphereGeometry(0.18, 10, 10),
+        new THREE.MeshStandardMaterial({ color: mx % 0.7 === 0 ? 0xff6200 : 0xffbe00 })
+      );
+      marigold.position.set(mx, 4.15 + Math.sin(mx * 3) * 0.1, 2.45);
+      mandirGroup.add(marigold);
+    }
+
+    // Hanging Brass Bell Pivot
+    const bellPivot = new THREE.Group();
+    bellPivot.position.set(0, 4.0, 2.65);
+    mandirGroup.add(bellPivot);
+
+    const bellChain = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.03, 0.7),
+      new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.2 })
+    );
+    bellChain.position.y = -0.35;
+    bellPivot.add(bellChain);
+
+    const bellDome = new THREE.Mesh(
+      new THREE.ConeGeometry(0.32, 0.45, 20),
+      new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.85, roughness: 0.2 })
+    );
+    bellDome.position.y = -0.75;
+    bellPivot.add(bellDome);
+
+    /**************************************************************
+     * 6. MITHAIGHAR SWEET COUNTER & OPENING LADDOO BOX (SCENE 6)
+     **************************************************************/
+    const sweetCounter = new THREE.Group();
+    sweetCounter.position.set(5.4, 0, 2.0);
+    sweetCounter.rotation.y = -Math.PI / 2;
+    worldGroup.add(sweetCounter);
+
+    const counterTable = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 1.4, 1.4),
+      new THREE.MeshStandardMaterial({ color: 0xd9385a })
+    );
+    counterTable.position.y = 0.7;
+    sweetCounter.add(counterTable);
+
+    // Wooden Sweet Box Base
+    const sweetBoxGroup = new THREE.Group();
+    sweetBoxGroup.position.set(0, 1.45, 0);
+    sweetCounter.add(sweetBoxGroup);
+
+    const boxBase = new THREE.Mesh(
+      new THREE.BoxGeometry(1.1, 0.35, 0.9),
+      new THREE.MeshStandardMaterial({ color: 0x6e3518 })
+    );
+    boxBase.position.y = 0.17;
+    sweetBoxGroup.add(boxBase);
+
+    // Hinged Lid with Love Note Inside
+    const lidPivot = new THREE.Group();
+    lidPivot.position.set(0, 0.35, -0.45);
+    sweetBoxGroup.add(lidPivot);
+
+    const boxLid = new THREE.Mesh(
+      new THREE.BoxGeometry(1.1, 0.08, 0.9),
+      new THREE.MeshStandardMaterial({ color: 0x854220 })
+    );
+    boxLid.position.set(0, 0.04, 0.45);
+    lidPivot.add(boxLid);
+
+    // Note inside Lid ("100% Pure Love / Sweetest Thing Here")
+    const noteTex = makeTextBannerTexture('#fff9f0', '#ff6b8b', CONFIG.sweetCardTop, CONFIG.sweetCardBottom, 256, 180);
+    const innerNote = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.92, 0.72),
+      new THREE.MeshBasicMaterial({ map: noteTex, side: THREE.DoubleSide })
+    );
+    innerNote.position.set(0, -0.02, 0.45);
+    innerNote.rotation.x = Math.PI / 2;
+    lidPivot.add(innerNote);
+
+    // Golden Motichoor Laddoos inside Box
+    const laddoo1 = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2, 16, 16),
+      new THREE.MeshStandardMaterial({ color: 0xff9d1c, roughness: 0.4 })
+    );
+    laddoo1.position.set(-0.24, 0.32, 0);
+    const laddoo2 = laddoo1.clone();
+    laddoo2.position.set(0.24, 0.32, 0);
+    sweetBoxGroup.add(laddoo1, laddoo2);
+
+    /**************************************************************
+     * 7. CUTE 3D COUPLE CHARACTERS + WHITE BUNNY
+     **************************************************************/
+    const charactersGroup = new THREE.Group();
+    charactersGroup.position.set(0, 0, 15.2);
+    worldGroup.add(charactersGroup);
+
+    function createCutePerson(isGirl) {
+      const pGroup = new THREE.Group();
+
+      // Head
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.46, 24, 24),
+        new THREE.MeshStandardMaterial({ color: 0xffdfc4, roughness: 0.6 })
+      );
+      head.position.y = 1.65;
+      pGroup.add(head);
+
+      // Cute Eyes
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1f0d14 });
+      const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), eyeMat);
+      leftEye.position.set(-0.15, 1.68, 0.42);
+      const rightEye = leftEye.clone();
+      rightEye.position.x = 0.15;
+      pGroup.add(leftEye, rightEye);
+
+      // Blush Cheeks
+      const blushMat = new THREE.MeshBasicMaterial({ color: 0xff7a95, transparent: true, opacity: 0.65 });
+      const leftBlush = new THREE.Mesh(new THREE.CircleGeometry(0.08, 12), blushMat);
+      leftBlush.position.set(-0.24, 1.58, 0.435);
+      const rightBlush = leftBlush.clone();
+      rightBlush.position.x = 0.24;
+      pGroup.add(leftBlush, rightBlush);
+
+      // Hair
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x1d1118, roughness: 0.8 });
+      const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.48, 20, 20, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMat);
+      hairCap.position.y = 1.68;
+      hairCap.rotation.x = -0.18;
+      pGroup.add(hairCap);
+
+      if (isGirl) {
+        // Long Flowing Hair Back + Bindi
+        const longHair = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.85, 0.35), hairMat);
+        longHair.position.set(0, 1.35, -0.25);
+        pGroup.add(longHair);
+
+        const bindi = new THREE.Mesh(new THREE.CircleGeometry(0.03, 10), new THREE.MeshBasicMaterial({ color: 0xd91c38 }));
+        bindi.position.set(0, 1.77, 0.46);
+        pGroup.add(bindi);
+
+        // Festive Yellow/Red Lehenga Skirt
+        const skirt = new THREE.Mesh(
+          new THREE.ConeGeometry(0.62, 1.05, 24),
+          new THREE.MeshStandardMaterial({ color: 0xffb71c, roughness: 0.5 })
+        );
+        skirt.position.y = 0.52;
+        pGroup.add(skirt);
+
+        const borderRim = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.60, 0.63, 0.22, 24),
+          new THREE.MeshStandardMaterial({ color: 0xd92638 })
+        );
+        borderRim.position.y = 0.12;
+        pGroup.add(borderRim);
+
+        // Choli Top
+        const top = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.28, 0.35, 0.48, 18),
+          new THREE.MeshStandardMaterial({ color: 0xe85d1a })
+        );
+        top.position.y = 1.08;
+        pGroup.add(top);
+      } else {
+        // Boy White Festive Kurta
+        const kurta = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.34, 0.44, 1.05, 20),
+          new THREE.MeshStandardMaterial({ color: 0xf7f5f0, roughness: 0.6 })
+        );
+        kurta.position.y = 0.8;
+        pGroup.add(kurta);
+
+        // Legs
+        const legGeo = new THREE.CylinderGeometry(0.12, 0.11, 0.45, 12);
+        const legMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const lLeg = new THREE.Mesh(legGeo, legMat);
+        lLeg.position.set(-0.16, 0.22, 0);
+        const rLeg = lLeg.clone();
+        rLeg.position.x = 0.16;
+        pGroup.add(lLeg, rLeg);
+      }
+
+      // Arms + Sparkler (Phuljhadi) Holder
+      const armGeo = new THREE.CylinderGeometry(0.09, 0.08, 0.58, 12);
+      const armMat = new THREE.MeshStandardMaterial({ color: isGirl ? 0xffdfc4 : 0xf7f5f0 });
+      const rightArm = new THREE.Mesh(armGeo, armMat);
+      rightArm.position.set(isGirl ? 0.42 : -0.42, 1.02, 0.2);
+      rightArm.rotation.z = isGirl ? -0.55 : 0.55;
+      rightArm.rotation.x = -0.5;
+      pGroup.add(rightArm);
+
+      // Sparkler Stick (Hidden until Final Scene)
+      const sparklerStick = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.018, 0.018, 0.65, 8),
+        new THREE.MeshBasicMaterial({ color: 0xc0c0c0 })
+      );
+      sparklerStick.position.set(isGirl ? 0.65 : -0.65, 1.15, 0.48);
+      sparklerStick.rotation.x = Math.PI / 3;
+      sparklerStick.visible = false;
+      pGroup.add(sparklerStick);
+
+      const sparklerGlow = new THREE.PointLight(0xfff099, 0, 6);
+      sparklerGlow.position.set(isGirl ? 0.72 : -0.72, 1.32, 0.72);
+      pGroup.add(sparklerGlow);
+
+      return { group: pGroup, sparklerStick, sparklerGlow };
+    }
+
+    const boy = createCutePerson(false);
+    boy.group.position.set(-0.58, 0, 0);
+    boy.group.rotation.y = Math.PI; // Start facing down the street (back to camera)
+
+    const girl = createCutePerson(true);
+    girl.group.position.set(0.58, 0, 0);
+    girl.group.rotation.y = Math.PI;
+
+    // Cute Little White Bunny Companion
+    const bunnyGroup = new THREE.Group();
+    const bunnyBody = new THREE.Mesh(
+      new THREE.SphereGeometry(0.26, 16, 16),
+      new THREE.MeshStandardMaterial({ color: 0xffffff })
+    );
+    bunnyBody.scale.y = 1.15;
+    bunnyBody.position.y = 0.28;
+    const bunnyHead = new THREE.Mesh(
+      new THREE.SphereGeometry(0.21, 16, 16),
+      new THREE.MeshStandardMaterial({ color: 0xffffff })
+    );
+    bunnyHead.position.y = 0.62;
+    const earGeo = new THREE.CylinderGeometry(0.045, 0.055, 0.36, 10);
+    const earMat = new THREE.MeshStandardMaterial({ color: 0xffd6e4 });
+    const earL = new THREE.Mesh(earGeo, earMat);
+    earL.position.set(-0.08, 0.9, 0);
+    const earR = earL.clone();
+    earR.position.x = 0.08;
+    bunnyGroup.add(bunnyBody, bunnyHead, earL, earR);
+    bunnyGroup.position.set(1.38, 0, 0.15);
+
+    charactersGroup.add(boy.group, girl.group, bunnyGroup);
+
+    /**************************************************************
+     * 8. FLOATING SKY LANTERN (SCENE 7)
+     **************************************************************/
+    const skyLantern = new THREE.Group();
+    const lanternPaper = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.45, 0.32, 0.95, 16),
+      new THREE.MeshBasicMaterial({ color: 0xffaa2b })
+    );
+    const lanternLight = new THREE.PointLight(0xffae24, 1.5, 12);
+    skyLantern.add(lanternPaper, lanternLight);
+    skyLantern.position.set(0, 2.2, -3);
+    skyLantern.visible = false;
+    worldGroup.add(skyLantern);
+
+    /**************************************************************
+     * 9. PARTICLE SYSTEM FOR SKY FIREWORKS & PHULJHADI SPARKS
+     **************************************************************/
+    const activeBursts = [];
+
+    function spawnFireworkBurst(origin, colorHex, count = 90, speed = 0.26, gravity = 0.003) {
+      const geo = new THREE.BufferGeometry();
+      const positions = new Float32Array(count * 3);
+      const velocities = [];
+
+      for (let i = 0; i < count; i++) {
+        positions[i * 3] = origin.x;
+        positions[i * 3 + 1] = origin.y;
+        positions[i * 3 + 2] = origin.z;
+
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const r = (0.35 + Math.random() * 0.65) * speed;
+        velocities.push({
+          vx: r * Math.sin(phi) * Math.cos(theta),
+          vy: r * Math.sin(phi) * Math.sin(theta),
+          vz: r * Math.cos(phi)
+        });
+      }
+
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const mat = new THREE.PointsMaterial({
+        color: colorHex,
+        size: 0.42,
+        transparent: true,
+        opacity: 1,
+        blending: THREE.AdditiveBlending
+      });
+      const points = new THREE.Points(geo, mat);
+      scene.add(points);
+      activeBursts.push({ points, velocities, gravity, age: 0, maxAge: 85 });
+    }
+
+    /**************************************************************
+     * STORYBOARD STEP CONTROLLER (MATCHES EVERY VIDEO SCENE)
+     **************************************************************/
+    let currentStep = 0;
+    let phuljhadiActive = false;
+    const actionBtn = document.getElementById('action-btn');
+    const hintBanner = document.getElementById('hint-banner');
+    const skyTitle = document.getElementById('sky-title');
+    const finalCard = document.getElementById('final-card');
+
+    function setUI(hintText, btnText, showBtn = true) {
+      if (hintText) {
+        hintBanner.innerText = hintText;
+        hintBanner.classList.add('show');
+      } else {
+        hintBanner.classList.remove('show');
+      }
+      if (showBtn) {
+        actionBtn.innerText = btnText;
+        actionBtn.classList.add('active');
+      } else {
+        actionBtn.classList.remove('active');
+      }
+    }
+
+    actionBtn.addEventListener('click', () => {
+      currentStep++;
+      runStoryStep(currentStep);
+    });
+
+    function runStoryStep(step) {
+      // STEP 1: Launch Fireworks in Night Sky -> Reveal "Cutie ❤️ Kuchupuchu" -> Swoop Down to Street
+      if (step === 1) {
+        setUI("🎇 Look at the sky...", "", false);
+        playFireworkPop();
+        spawnFireworkBurst(new THREE.Vector3(-5, 25, -18), 0xffcf40, 110, 0.32);
+
+        setTimeout(() => {
+          playFireworkPop();
+          spawnFireworkBurst(new THREE.Vector3(5, 27, -18), 0xff477e, 110, 0.32);
+        }, 550);
+
+        setTimeout(() => {
+          playFireworkPop();
+          spawnFireworkBurst(new THREE.Vector3(0, 26, -15), 0xffe680, 160, 0.38);
+          skyTitle.classList.add('visible');
+        }, 1150);
+
+        // Swoop camera down into the Diwali street behind the couple
+        setTimeout(() => {
+          gsap.to(camera.position, { x: 0, y: 3.4, z: 21.5, duration: 3.2, ease: "power2.inOut" });
+          gsap.to(cameraTarget, { x: 0, y: 3.0, z: 5.0, duration: 3.2, ease: "power2.inOut", onComplete: () => {
+            setUI("🪔 Let's decorate our street with diyas!", "Light the Diyas 🪔", true);
+          }});
+        }, 2800);
+      }
+
+      // STEP 2: Pan to Carved Door & Light the 3 Clay Diyas
+      else if (step === 2) {
+        skyTitle.classList.remove('visible');
+        setUI("✨ Lighting the doorstep diyas...", "", false);
+
+        gsap.to(camera.position, { x: -2.2, y: 1.8, z: 12.2, duration: 2.0, ease: "power2.inOut" });
+        gsap.to(cameraTarget, { x: -6.3, y: 1.0, z: 10.0, duration: 2.0, ease: "power2.inOut", onComplete: () => {
+          doorstepDiyas.forEach((d, idx) => {
+            setTimeout(() => {
+              d.flame.visible = true;
+              gsap.to(d.dLight, { intensity: 1.6, duration: 0.5 });
+              playChime(523.25 + idx * 110);
+              spawnFireworkBurst(new THREE.Vector3(-5.6, 0.7, 10 + (idx - 1) * 1.2), 0xffaa22, 25, 0.08);
+            }, idx * 450);
+          });
+
+          setTimeout(() => {
+            setUI("🏮 Now let's light up the whole street!", "Turn on Street Lights ✨", true);
+          }, 1700);
+        }});
+      }
+
+      // STEP 3: Aerial View of Street Fairy Lights & Kandil Lanterns Turning On
+      else if (step === 3) {
+        setUI("✨ Watch the street glow...", "", false);
+
+        gsap.to(camera.position, { x: 0, y: 7.5, z: 16.5, duration: 2.2, ease: "power2.inOut" });
+        gsap.to(cameraTarget, { x: 0, y: 3.5, z: -4.0, duration: 2.2, ease: "power2.inOut", onComplete: () => {
+          playChime(783.99);
+          streetBulbs.forEach((b, i) => {
+            setTimeout(() => {
+              b.material.color.setHex(i % 2 === 0 ? 0xffe46b : 0xff6b9d);
+            }, i * 12);
+          });
+          streetLanterns.forEach((k) => {
+            k.material.emissive.setHex(0xff7711);
+          });
+          gsap.to(streetWarmGlow, { intensity: 2.3, duration: 1.2 });
+
+          setTimeout(() => {
+            // Walk couple down to the Mandir
+            charactersGroup.position.set(-2.2, 0, -7.8);
+            gsap.to(camera.position, { x: -2.2, y: 2.5, z: -4.2, duration: 2.2, ease: "power2.inOut" });
+            gsap.to(cameraTarget, { x: -2.2, y: 3.2, z: -11.5, duration: 2.2, ease: "power2.inOut", onComplete: () => {
+              setUI("🛕 Make a wish together at the Mandir", "Ring the bell 🔔", true);
+            }});
+          }, 1800);
+        }});
+      }
+
+      // STEP 4: Ring the Mandir Bell
+      else if (step === 4) {
+        setUI("🔔 Ringing the temple bell for our blessings...", "", false);
+        playBellSound();
+
+        // Swing the brass bell
+        gsap.to(bellPivot.rotation, {
+          z: 0.45,
+          duration: 0.22,
+          yoyo: true,
+          repeat: 7,
+          ease: "sine.inOut",
+          onComplete: () => { bellPivot.rotation.z = 0; }
+        });
+
+        spawnFireworkBurst(new THREE.Vector3(-2.2, 3.5, -9.0), 0xffdd55, 45, 0.12);
+
+        setTimeout(() => {
+          setUI("🍬 Diwali is incomplete without Mithai!", "Open Sweet Box 🎁", true);
+        }, 2200);
+      }
+
+      // STEP 5: Pan to MithaiGhar Sweet Box -> Open Lid & Float Laddoos
+      else if (step === 5) {
+        setUI("🍬 Opening something sweet for my sweetest...", "", false);
+
+        gsap.to(camera.position, { x: 2.2, y: 2.35, z: 2.0, duration: 2.0, ease: "power2.inOut" });
+        gsap.to(cameraTarget, { x: 5.4, y: 1.65, z: 2.0, duration: 2.0, ease: "power2.inOut", onComplete: () => {
+          playChime(880);
+          // Open Wooden Box Lid
+          gsap.to(lidPivot.rotation, { x: -Math.PI * 0.62, duration: 1.2, ease: "back.out(1.7)" });
+          // Float the two Golden Laddoos Upward
+          gsap.to(laddoo1.position, { y: 0.88, duration: 1.2, delay: 0.3, ease: "elastic.out(1, 0.5)" });
+          gsap.to(laddoo2.position, { y: 0.95, duration: 1.2, delay: 0.45, ease: "elastic.out(1, 0.5)" });
+          spawnFireworkBurst(new THREE.Vector3(5.2, 2.0, 2.0), 0xffae00, 35, 0.1);
+
+          setTimeout(() => {
+            setUI("🏮 Let's send our wish to the stars!", "Release Sky Lantern 🏮", true);
+          }, 2300);
+        }});
+      }
+
+      // STEP 6: Release Glowing Sky Lantern Into the Starry Sky
+      else if (step === 6) {
+        setUI("🏮 Floating our Diwali wish into the sky...", "", false);
+        skyLantern.visible = true;
+        skyLantern.position.set(0, 2.5, 2);
+
+        gsap.to(camera.position, { x: 0, y: 2.5, z: 9.0, duration: 1.8, ease: "power2.inOut" });
+        gsap.to(cameraTarget, { x: 0, y: 12.0, z: -2.0, duration: 3.4, ease: "power1.inOut" });
+        gsap.to(skyLantern.position, { y: 20.0, x: 1.5, z: -4.0, duration: 4.0, ease: "power1.inOut" });
+        playChime(987.77);
+
+        setTimeout(() => {
+          // Bring couple back to center facing camera for Phuljhadi Finale
+          charactersGroup.position.set(0, 0, 4.0);
+          boy.group.rotation.y = 0;
+          girl.group.rotation.y = 0;
+
+          gsap.to(camera.position, { x: 0, y: 1.9, z: 8.2, duration: 2.0, ease: "power2.inOut" });
+          gsap.to(cameraTarget, { x: 0, y: 1.35, z: 4.0, duration: 2.0, ease: "power2.inOut", onComplete: () => {
+            setUI("✨ Time for the best part together!", "Light the phuljhadis 🎇", true);
+          }});
+        }, 3800);
+      }
+
+      // STEP 7: Light the Phuljhadis (Sparklers) Finale!
+      else if (step === 7) {
+        setUI("🎇 Happy Diwali Cutie ❤️ Kuchupuchu!", "", false);
+        boy.sparklerStick.visible = true;
+        girl.sparklerStick.visible = true;
+        boy.sparklerGlow.intensity = 2.2;
+        girl.sparklerGlow.intensity = 2.2;
+        phuljhadiActive = true;
+        playFireworkPop();
+
+        // Happy couple bounce
+        gsap.to(boy.group.position, { y: 0.18, duration: 0.35, yoyo: true, repeat: -1, ease: "sine.inOut" });
+        gsap.to(girl.group.position, { y: 0.18, duration: 0.35, delay: 0.17, yoyo: true, repeat: -1, ease: "sine.inOut" });
+        gsap.to(bunnyGroup.position, { y: 0.25, duration: 0.28, yoyo: true, repeat: -1, ease: "sine.inOut" });
+
+        // Show Final Love Note Card after enjoying the sparklers
+        setTimeout(() => {
+          finalCard.classList.add('show');
+        }, 4800);
+      }
+    }
+
+    /**************************************************************
+     * MAIN ANIMATION LOOP
+     **************************************************************/
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const elapsed = clock.getElapsedTime();
+
+      // Always keep camera aimed smoothly at target
+      camera.lookAt(cameraTarget);
+
+      // Gentle idle sway for hanging lanterns
+      streetLanterns.forEach((k, idx) => {
+        k.rotation.y = elapsed * 0.6 + idx;
+      });
+
+      // Continuous Phuljhadi Sparks in Step 7
+      if (phuljhadiActive && Math.random() > 0.3) {
+        const bWorld = new THREE.Vector3(-0.58 - 0.65, 1.32, 4.0 + 0.55);
+        const gWorld = new THREE.Vector3(0.58 + 0.65, 1.32, 4.0 + 0.55);
+        spawnFireworkBurst(bWorld, 0xffe866, 6, 0.065, 0.002);
+        spawnFireworkBurst(gWorld, 0xff94b8, 6, 0.065, 0.002);
+      }
+
+      // Update active particle bursts
+      for (let i = activeBursts.length - 1; i >= 0; i--) {
+        const b = activeBursts[i];
+        b.age++;
+        const posArr = b.points.geometry.attributes.position.array;
+        for (let j = 0; j < b.velocities.length; j++) {
+          posArr[j * 3] += b.velocities[j].vx;
+          posArr[j * 3 + 1] += b.velocities[j].vy;
+          posArr[j * 3 + 2] += b.velocities[j].vz;
+          b.velocities[j].vy -= b.gravity;
+        }
+        b.points.geometry.attributes.position.needsUpdate = true;
+        b.points.material.opacity = 1 - b.age / b.maxAge;
+
+        if (b.age >= b.maxAge) {
+          scene.remove(b.points);
+          b.points.geometry.dispose();
+          b.points.material.dispose();
+          activeBursts.splice(i, 1);
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // Responsive Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
